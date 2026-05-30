@@ -1,0 +1,1720 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FitTracker">
+<title>FitTracker</title>
+<style>
+  :root {
+    --bg: #f2f2f7;
+    --card: #ffffff;
+    --card2: #f9f9fb;
+    --accent: #007AFF;
+    --accent2: #34C759;
+    --warn: #FF9500;
+    --danger: #FF3B30;
+    --text: #1c1c1e;
+    --text2: #6e6e73;
+    --text3: #aeaeb2;
+    --border: #e5e5ea;
+    --safe-top: env(safe-area-inset-top, 20px);
+    --safe-bottom: env(safe-area-inset-bottom, 20px);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    max-width: 430px;
+    margin: 0 auto;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  /* NAV */
+  .tab-bar {
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 430px;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    display: flex;
+    padding-bottom: var(--safe-bottom);
+    z-index: 100;
+  }
+  .tab-btn {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    padding: 8px 4px 4px;
+    border: none; background: none; cursor: pointer;
+    color: var(--text3); font-size: 10px; gap: 3px;
+    transition: color 0.2s;
+  }
+  .tab-btn.active { color: var(--accent); }
+  .tab-btn svg { width: 24px; height: 24px; }
+  /* PAGES */
+  .page { display: none; padding-bottom: calc(70px + var(--safe-bottom)); }
+  .page.active { display: block; }
+  /* HEADER */
+  .page-header {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(242,242,247,0.92);
+    backdrop-filter: blur(20px);
+    padding: calc(var(--safe-top) + 8px) 16px 12px;
+  }
+  .page-header h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
+  .page-header p { font-size: 14px; color: var(--text2); margin-top: 2px; }
+  /* CARDS */
+  .card {
+    background: var(--card);
+    border-radius: 16px;
+    margin: 0 16px 12px;
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 14px 16px 10px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .card-title { font-size: 13px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; }
+  /* MACRO RING */
+  .macro-ring-wrap {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 16px 16px 8px;
+  }
+  .ring-outer { position: relative; width: 140px; height: 140px; }
+  .ring-outer svg { transform: rotate(-90deg); }
+  .ring-center {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    text-align: center;
+  }
+  .ring-kcal { font-size: 28px; font-weight: 700; line-height: 1; }
+  .ring-label { font-size: 11px; color: var(--text2); }
+  .macro-bars { display: flex; gap: 12px; padding: 12px 16px 16px; }
+  .macro-bar-item { flex: 1; }
+  .macro-bar-label { font-size: 12px; color: var(--text2); margin-bottom: 4px; display: flex; justify-content: space-between; }
+  .macro-bar-label span { font-weight: 600; color: var(--text); }
+  .bar-track { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+  .bar-p { background: #5856D6; }
+  .bar-k { background: var(--warn); }
+  .bar-v { background: var(--danger); }
+  /* WEIGHT CARD */
+  .weight-display {
+    padding: 16px;
+    display: flex; align-items: flex-end; gap: 8px;
+  }
+  .weight-big { font-size: 48px; font-weight: 700; letter-spacing: -2px; line-height: 1; }
+  .weight-unit { font-size: 20px; color: var(--text2); margin-bottom: 6px; }
+  .weight-goal { font-size: 13px; color: var(--text2); margin-top: 4px; }
+  .weight-progress-wrap { padding: 0 16px 16px; }
+  .weight-progress-bar { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+  .weight-progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 4px; transition: width 0.5s; }
+  .weight-progress-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--text3); margin-top: 4px; }
+  /* LOG ITEMS */
+  .log-list { padding: 0 0 4px; }
+  .log-item {
+    display: flex; align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    gap: 12px;
+  }
+  .log-item:last-child { border-bottom: none; }
+  .log-icon {
+    width: 40px; height: 40px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+  .log-icon-food { background: #fff3e0; }
+  .log-icon-activity { background: #e8f5e9; }
+  .log-info { flex: 1; min-width: 0; }
+  .log-name { font-size: 15px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .log-meta { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .log-kcal { font-size: 15px; font-weight: 600; flex-shrink: 0; }
+  .log-kcal.negative { color: var(--accent2); }
+  .log-kcal.positive { color: var(--text); }
+  .log-delete { padding: 4px 8px; color: var(--danger); background: none; border: none; font-size: 18px; cursor: pointer; }
+  /* MEAL SECTIONS */
+  .meal-section { margin: 0 0 4px; }
+  .meal-label {
+    padding: 8px 16px 4px;
+    font-size: 12px; font-weight: 600; color: var(--text2);
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  /* ADD BUTTON */
+  .add-btn {
+    display: flex; align-items: center; justify-content: center;
+    gap: 6px;
+    margin: 0 16px 12px;
+    padding: 14px;
+    background: var(--accent);
+    color: white; border: none; border-radius: 14px;
+    font-size: 16px; font-weight: 600; cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  .add-btn:active { opacity: 0.85; transform: scale(0.98); }
+  .add-btn-secondary {
+    background: var(--card); color: var(--accent);
+    border: 1.5px solid var(--accent);
+  }
+  /* MODAL */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(4px);
+    align-items: flex-end;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--card); border-radius: 20px 20px 0 0;
+    width: 100%; max-width: 430px; margin: 0 auto;
+    padding: 16px 16px calc(16px + var(--safe-bottom));
+    max-height: 92vh; overflow-y: auto;
+    animation: slideUp 0.3s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  .modal-handle {
+    width: 36px; height: 4px; background: var(--border);
+    border-radius: 2px; margin: 0 auto 16px;
+  }
+  .modal-title { font-size: 20px; font-weight: 700; margin-bottom: 16px; }
+  .modal-subtitle { font-size: 14px; color: var(--text2); margin-bottom: 16px; }
+  /* INPUTS */
+  .form-group { margin-bottom: 12px; }
+  .form-label { font-size: 13px; font-weight: 600; color: var(--text2); margin-bottom: 6px; display: block; }
+  .form-input {
+    width: 100%; padding: 12px 14px;
+    background: var(--bg); border: none; border-radius: 12px;
+    font-size: 16px; color: var(--text);
+    outline: none;
+  }
+  .form-input:focus { background: #e8e8ed; }
+  .form-row { display: flex; gap: 8px; }
+  .form-row .form-group { flex: 1; }
+  /* SEARCH RESULTS */
+  .search-results {
+    background: var(--bg); border-radius: 12px;
+    margin-top: 4px; max-height: 200px; overflow-y: auto;
+  }
+  .search-item {
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .search-item:last-child { border-bottom: none; }
+  .search-item:active { background: var(--border); }
+  .search-item-name { font-size: 15px; }
+  .search-item-macro { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .search-item-kcal { font-size: 14px; font-weight: 600; color: var(--accent); flex-shrink: 0; }
+  /* FEEDBACK BOX */
+  .feedback-box {
+    background: #f0f9ff; border: 1.5px solid #bae6fd;
+    border-radius: 12px; padding: 12px 14px; margin-bottom: 12px;
+    font-size: 14px; line-height: 1.5;
+    display: none;
+  }
+  .feedback-box.warn { background: #fffbeb; border-color: #fde68a; }
+  .feedback-box.bad { background: #fff5f5; border-color: #fca5a5; }
+  .feedback-box.good { background: #f0fdf4; border-color: #86efac; }
+  .feedback-icon { font-size: 18px; margin-right: 6px; }
+  .feedback-title { font-weight: 600; margin-bottom: 4px; }
+  /* SETTINGS */
+  .settings-section { margin: 0 16px 20px; }
+  .settings-title { font-size: 13px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .settings-card { background: var(--card); border-radius: 16px; overflow: hidden; }
+  .settings-row {
+    display: flex; align-items: center; padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    gap: 12px;
+  }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-row label { flex: 1; font-size: 15px; }
+  .settings-row input[type=number], .settings-row select {
+    background: var(--bg); border: none; border-radius: 8px;
+    padding: 6px 10px; font-size: 15px; color: var(--text);
+    width: 90px; text-align: right;
+  }
+  .settings-row input[type=range] { flex: 1; accent-color: var(--accent); }
+  .save-btn {
+    display: block; width: calc(100% - 32px); margin: 0 16px 16px;
+    padding: 15px; background: var(--accent); color: white;
+    border: none; border-radius: 14px; font-size: 16px; font-weight: 600;
+    cursor: pointer; text-align: center;
+  }
+  /* HISTORY CHART */
+  .chart-wrap { padding: 12px 16px 16px; }
+  canvas { width: 100% !important; }
+  /* INSIGHTS */
+  .insight-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--card); border-radius: 20px;
+    padding: 8px 14px; margin: 4px;
+    font-size: 13px;
+  }
+  .insight-chips { padding: 4px 12px 12px; display: flex; flex-wrap: wrap; }
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center; padding: 40px 20px;
+    color: var(--text2);
+  }
+  .empty-state .emoji { font-size: 48px; display: block; margin-bottom: 12px; }
+  .empty-state p { font-size: 15px; }
+  /* ONBOARDING */
+  #onboarding {
+    position: fixed; inset: 0; z-index: 500;
+    background: linear-gradient(160deg, #007AFF 0%, #5856D6 100%);
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 32px 24px;
+    padding-top: calc(var(--safe-top) + 32px);
+  }
+  #onboarding .logo { font-size: 64px; margin-bottom: 16px; }
+  #onboarding h1 { font-size: 32px; font-weight: 800; color: white; text-align: center; letter-spacing: -1px; margin-bottom: 8px; }
+  #onboarding p { font-size: 16px; color: rgba(255,255,255,0.8); text-align: center; margin-bottom: 32px; }
+  #onboarding .ob-card {
+    background: rgba(255,255,255,0.15); border-radius: 20px;
+    padding: 20px; width: 100%; margin-bottom: 16px;
+  }
+  #onboarding .ob-input {
+    width: 100%; padding: 12px 14px; border-radius: 12px;
+    background: rgba(255,255,255,0.2); border: 1.5px solid rgba(255,255,255,0.4);
+    color: white; font-size: 16px; margin-bottom: 10px;
+  }
+  #onboarding .ob-input::placeholder { color: rgba(255,255,255,0.6); }
+  #onboarding .ob-input:last-child { margin-bottom: 0; }
+  #onboarding .ob-row { display: flex; gap: 8px; }
+  #onboarding .ob-row .ob-input { flex: 1; }
+  #onboarding .ob-label { color: rgba(255,255,255,0.7); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  #onboarding .ob-btn {
+    width: 100%; padding: 16px; background: white; color: var(--accent);
+    border: none; border-radius: 16px; font-size: 17px; font-weight: 700;
+    cursor: pointer;
+  }
+  /* STREAK */
+  .streak-badge {
+    display: flex; align-items: center; gap: 6px;
+    background: linear-gradient(135deg, #FF9500, #FF6B00);
+    color: white; border-radius: 20px; padding: 6px 12px;
+    font-size: 13px; font-weight: 600;
+  }
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  /* ACTIVITY ITEMS */
+  .activity-type-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+    margin-bottom: 12px;
+  }
+  .activity-type-btn {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 12px 8px; background: var(--bg); border-radius: 12px;
+    border: 2px solid transparent; cursor: pointer; gap: 4px;
+    font-size: 12px; color: var(--text2); font-weight: 500;
+    transition: all 0.15s;
+  }
+  .activity-type-btn .emoji { font-size: 24px; }
+  .activity-type-btn.selected { border-color: var(--accent); background: #e8f0fe; color: var(--accent); }
+  /* TAG PILLS */
+  .tag-pill {
+    display: inline-block; padding: 4px 10px;
+    border-radius: 20px; font-size: 12px; font-weight: 500; margin-right: 4px;
+  }
+  .tag-pill.good { background: #dcfce7; color: #166534; }
+  .tag-pill.warn { background: #fef9c3; color: #854d0e; }
+  .tag-pill.bad { background: #fee2e2; color: #991b1b; }
+  /* PROGRESS TAB */
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 16px; margin-bottom: 12px; }
+  .stat-card {
+    background: var(--card); border-radius: 16px;
+    padding: 14px; display: flex; flex-direction: column;
+  }
+  .stat-card .label { font-size: 12px; color: var(--text2); margin-bottom: 4px; }
+  .stat-card .value { font-size: 24px; font-weight: 700; }
+  .stat-card .sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  /* WEIGHT LOG LIST */
+  .weight-log-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 16px; border-bottom: 1px solid var(--border);
+  }
+  .weight-log-item:last-child { border-bottom: none; }
+  /* NOTIFICATION STRIP */
+  .notif-strip {
+    margin: 8px 16px; padding: 12px 14px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 14px; color: white; font-size: 13px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .notif-strip .icon { font-size: 20px; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<!-- ONBOARDING -->
+<div id="onboarding">
+  <div class="logo">🏋️</div>
+  <h1>FitTracker</h1>
+  <p>Jouw persoonlijke gezondheids&shy;assistent voor body recompositie</p>
+  <div class="ob-card">
+    <div class="ob-label">Jouw gegevens</div>
+    <input class="ob-input" id="ob-name" type="text" placeholder="Naam" autocomplete="given-name">
+    <div class="ob-row">
+      <input class="ob-input" id="ob-age" type="number" placeholder="Leeftijd" min="16" max="80">
+      <select class="ob-input" id="ob-gender" style="color:white">
+        <option value="m" style="color:#333">Man</option>
+        <option value="v" style="color:#333">Vrouw</option>
+      </select>
+    </div>
+    <div class="ob-row">
+      <input class="ob-input" id="ob-height" type="number" placeholder="Lengte (cm)" min="140" max="220">
+      <input class="ob-input" id="ob-weight" type="number" placeholder="Gewicht (kg)" step="0.1" min="40" max="200">
+    </div>
+    <input class="ob-input" id="ob-target" type="number" placeholder="Streefgewicht (kg)" step="0.1" min="40" max="200">
+  </div>
+  <button class="ob-btn" onclick="completeOnboarding()">Aan de slag →</button>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" style="display:none">
+
+<!-- TAB: VANDAAG -->
+<div id="page-today" class="page active">
+  <div class="page-header">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <h1 id="greeting">Goedemorgen</h1>
+        <p id="today-date"></p>
+      </div>
+      <div id="streak-display" style="display:none" class="streak-badge">🔥 <span id="streak-count">0</span> dagen</div>
+    </div>
+  </div>
+
+  <!-- CALORIE RING -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Dagelijkse voortgang</span>
+      <span id="remaining-kcal-label" style="font-size:13px;color:var(--text2)"></span>
+    </div>
+    <div class="macro-ring-wrap">
+      <div class="ring-outer">
+        <svg viewBox="0 0 120 120" width="140" height="140">
+          <circle cx="60" cy="60" r="52" fill="none" stroke="#e5e5ea" stroke-width="10"/>
+          <circle id="ring-progress" cx="60" cy="60" r="52" fill="none" stroke="url(#ringGrad)" stroke-width="10"
+            stroke-dasharray="327" stroke-dashoffset="327" stroke-linecap="round"/>
+          <defs>
+            <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#007AFF"/>
+              <stop offset="100%" stop-color="#34C759"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="ring-center">
+          <div class="ring-kcal" id="ring-kcal-eaten">0</div>
+          <div class="ring-label">van <span id="ring-kcal-goal">—</span> kcal</div>
+        </div>
+      </div>
+    </div>
+    <div class="macro-bars">
+      <div class="macro-bar-item">
+        <div class="macro-bar-label">Eiwit <span id="bar-p-val">0g</span></div>
+        <div class="bar-track"><div class="bar-fill bar-p" id="bar-p" style="width:0%"></div></div>
+      </div>
+      <div class="macro-bar-item">
+        <div class="macro-bar-label">Koolh. <span id="bar-k-val">0g</span></div>
+        <div class="bar-track"><div class="bar-fill bar-k" id="bar-k" style="width:0%"></div></div>
+      </div>
+      <div class="macro-bar-item">
+        <div class="macro-bar-label">Vet <span id="bar-v-val">0g</span></div>
+        <div class="bar-track"><div class="bar-fill bar-v" id="bar-v" style="width:0%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEIGHT -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Gewicht</span>
+      <button onclick="openWeightModal()" style="background:none;border:none;color:var(--accent);font-size:14px;font-weight:600;cursor:pointer">+ Log</button>
+    </div>
+    <div class="weight-display">
+      <div class="weight-big" id="current-weight-display">—</div>
+      <div>
+        <div class="weight-unit">kg</div>
+        <div class="weight-goal" id="weight-goal-display"></div>
+      </div>
+    </div>
+    <div class="weight-progress-wrap">
+      <div class="weight-progress-bar">
+        <div class="weight-progress-fill" id="weight-progress-fill" style="width:0%"></div>
+      </div>
+      <div class="weight-progress-labels">
+        <span id="weight-start-label">Start</span>
+        <span id="weight-progress-pct"></span>
+        <span id="weight-end-label">Doel</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TODAY'S LOG -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Vandaag gegeten</span>
+    </div>
+    <div id="today-food-log" class="log-list">
+      <div class="empty-state"><span class="emoji">🥗</span><p>Voeg je eerste maaltijd toe</p></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Activiteiten vandaag</span>
+    </div>
+    <div id="today-activity-log" class="log-list">
+      <div class="empty-state"><span class="emoji">🏃</span><p>Voeg een activiteit toe</p></div>
+    </div>
+  </div>
+
+  <button class="add-btn" onclick="openFoodModal()">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Maaltijd toevoegen
+  </button>
+  <button class="add-btn add-btn-secondary" onclick="openActivityModal()">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+    Activiteit toevoegen
+  </button>
+</div>
+
+<!-- TAB: VOORTGANG -->
+<div id="page-progress" class="page">
+  <div class="page-header">
+    <h1>Voortgang</h1>
+    <p>Jouw statistieken</p>
+  </div>
+
+  <div class="stat-grid" id="stat-grid"></div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title">Gewichtsverloop</span></div>
+    <div class="chart-wrap">
+      <canvas id="weight-chart" height="150"></canvas>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title">Calorieën per dag</span></div>
+    <div class="chart-wrap">
+      <canvas id="kcal-chart" height="120"></canvas>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Gewicht log</span>
+      <button onclick="openWeightModal()" style="background:none;border:none;color:var(--accent);font-size:14px;font-weight:600;cursor:pointer">+ Log</button>
+    </div>
+    <div id="weight-log-list" class="log-list"></div>
+  </div>
+</div>
+
+<!-- TAB: INSTELLINGEN -->
+<div id="page-settings" class="page">
+  <div class="page-header">
+    <h1>Profiel</h1>
+    <p>Jouw doelen & gegevens</p>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-title">Lichaamsgegevens</div>
+    <div class="settings-card">
+      <div class="settings-row"><label>Naam</label><input type="text" id="s-name" class="form-input" style="width:130px;text-align:right"></div>
+      <div class="settings-row"><label>Leeftijd</label><input type="number" id="s-age" min="16" max="80"></div>
+      <div class="settings-row"><label>Geslacht</label><select id="s-gender"><option value="m">Man</option><option value="v">Vrouw</option></select></div>
+      <div class="settings-row"><label>Lengte (cm)</label><input type="number" id="s-height" min="140" max="220"></div>
+      <div class="settings-row"><label>Huidig gewicht (kg)</label><input type="number" id="s-weight" step="0.1"></div>
+      <div class="settings-row"><label>Streefgewicht (kg)</label><input type="number" id="s-target" step="0.1"></div>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-title">Activiteitsniveau</div>
+    <div class="settings-card">
+      <div class="settings-row">
+        <label>Activiteitsfactor</label>
+        <select id="s-activity-factor">
+          <option value="1.2">Zittend werk</option>
+          <option value="1.375">Licht actief (1-3x/week sport)</option>
+          <option value="1.55" selected>Matig actief (3-5x/week)</option>
+          <option value="1.725">Erg actief (6-7x/week)</option>
+          <option value="1.9">Atleet</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-title">Berekende doelen (Body Recompositie)</div>
+    <div class="settings-card" id="goals-display">
+      <div class="settings-row"><label>Dagkalorien doel</label><span id="goal-kcal" style="font-weight:700;color:var(--accent)"></span></div>
+      <div class="settings-row"><label>Eiwit doel</label><span id="goal-protein" style="font-weight:700;color:#5856D6"></span></div>
+      <div class="settings-row"><label>Koolhydraten doel</label><span id="goal-carbs" style="font-weight:700;color:var(--warn)"></span></div>
+      <div class="settings-row"><label>Vet doel</label><span id="goal-fat" style="font-weight:700;color:var(--danger)"></span></div>
+    </div>
+  </div>
+
+  <button class="save-btn" onclick="saveSettings()">Instellingen opslaan</button>
+
+  <div class="settings-section">
+    <div class="settings-title">Over FitTracker</div>
+    <div class="settings-card">
+      <div class="settings-row"><label>Versie</label><span style="color:var(--text2)">1.0.0</span></div>
+      <div class="settings-row" style="cursor:pointer" onclick="if(confirm('Alle data verwijderen?'))clearData()"><label style="color:var(--danger)">Reset alle data</label></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<!-- TAB BAR -->
+<nav class="tab-bar" id="tab-bar" style="display:none">
+  <button class="tab-btn active" onclick="switchTab('today')" id="tab-today">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    Vandaag
+  </button>
+  <button class="tab-btn" onclick="switchTab('progress')" id="tab-progress">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    Voortgang
+  </button>
+  <button class="tab-btn" onclick="switchTab('settings')" id="tab-settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+    Profiel
+  </button>
+</nav>
+
+<!-- MODALS -->
+
+<!-- FOOD MODAL -->
+<div class="modal-overlay" id="food-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Maaltijd toevoegen</div>
+
+    <div class="form-group">
+      <label class="form-label">Zoek voeding</label>
+      <input class="form-input" id="food-search" placeholder="bijv. kwark, kip, brood..." oninput="searchFood(this.value)" autocomplete="off">
+      <div class="search-results" id="food-search-results" style="display:none"></div>
+    </div>
+
+    <div id="food-form" style="display:none">
+      <div class="form-group">
+        <label class="form-label">Gerecht / product</label>
+        <input class="form-input" id="food-name" type="text" placeholder="Naam">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Hoeveelheid (g/ml)</label>
+          <input class="form-input" id="food-amount" type="number" placeholder="100" min="1" oninput="updateFoodCalc()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Maaltijd</label>
+          <select class="form-input" id="food-meal">
+            <option value="Ontbijt">Ontbijt</option>
+            <option value="Lunch">Lunch</option>
+            <option value="Avondeten">Avondeten</option>
+            <option value="Snack">Snack</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Calorieën</label>
+          <input class="form-input" id="food-kcal" type="number" placeholder="kcal" oninput="clearFoodFeedback()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Eiwitten (g)</label>
+          <input class="form-input" id="food-protein" type="number" placeholder="g" oninput="clearFoodFeedback()">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Koolhydraten (g)</label>
+          <input class="form-input" id="food-carbs" type="number" placeholder="g">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Vetten (g)</label>
+          <input class="form-input" id="food-fat" type="number" placeholder="g">
+        </div>
+      </div>
+
+      <div id="food-feedback" class="feedback-box"></div>
+
+      <button class="add-btn" onclick="analyzeFoodFirst()" id="analyze-btn">
+        🔍 Analyseer & voeg toe
+      </button>
+    </div>
+
+    <div id="food-manual-btn-wrap">
+      <button class="add-btn add-btn-secondary" onclick="showManualFoodForm()" style="margin:8px 0 0">
+        ✏️ Handmatig invoeren
+      </button>
+    </div>
+
+    <button class="add-btn add-btn-secondary" onclick="closeModal('food-modal')" style="margin-top:4px">Annuleren</button>
+  </div>
+</div>
+
+<!-- ACTIVITY MODAL -->
+<div class="modal-overlay" id="activity-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Activiteit toevoegen</div>
+
+    <div class="activity-type-grid" id="activity-grid"></div>
+
+    <div class="form-group">
+      <label class="form-label">Eigen activiteit</label>
+      <input class="form-input" id="act-custom-name" placeholder="bijv. fietsen, yoga..." oninput="customActivityInput(this.value)">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Duur (minuten)</label>
+        <input class="form-input" id="act-duration" type="number" placeholder="30" min="1" oninput="calcActivityKcal()">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Geschatte kcal</label>
+        <input class="form-input" id="act-kcal" type="number" placeholder="auto">
+      </div>
+    </div>
+
+    <div id="act-feedback" class="feedback-box" style="display:block;background:#f0fdf4;border-color:#86efac;display:none"></div>
+
+    <button class="add-btn" onclick="addActivity()">+ Toevoegen</button>
+    <button class="add-btn add-btn-secondary" onclick="closeModal('activity-modal')">Annuleren</button>
+  </div>
+</div>
+
+<!-- WEIGHT MODAL -->
+<div class="modal-overlay" id="weight-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Gewicht loggen</div>
+    <div class="form-group">
+      <label class="form-label">Gewicht (kg)</label>
+      <input class="form-input" id="weight-input" type="number" step="0.1" placeholder="bijv. 82.5" min="40" max="200">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Datum</label>
+      <input class="form-input" id="weight-date-input" type="date">
+    </div>
+    <button class="add-btn" onclick="logWeight()">Opslaan</button>
+    <button class="add-btn add-btn-secondary" onclick="closeModal('weight-modal')">Annuleren</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+let profile = {};
+let todayLog = { food: [], activities: [] };
+let weightLog = [];
+let dailyKcalLog = {}; // date -> kcal
+
+const FOOD_DB = [
+  // ONTBIJT
+  { name: "Kwark (mager)", emoji: "🥛", kcal: 57, p: 9.5, k: 4.2, f: 0.2, per: 100, tags: ["eiwitrijk","laag vet"] },
+  { name: "Griekse yoghurt (0%)", emoji: "🥛", kcal: 59, p: 10, k: 3.6, f: 0.4, per: 100, tags: ["eiwitrijk"] },
+  { name: "Havermout (droog)", emoji: "🌾", kcal: 368, p: 13, k: 58, f: 7, per: 100, tags: ["complex koolh.","vezel"] },
+  { name: "Ei (gekookt)", emoji: "🥚", kcal: 155, p: 13, k: 1.1, f: 11, per: 100, tags: ["eiwitrijk","gezond vet"] },
+  { name: "Ei (1 stuks)", emoji: "🥚", kcal: 78, p: 6.5, k: 0.6, f: 5.5, per: 50, tags: ["eiwitrijk"] },
+  { name: "Volkoren brood (1 snee)", emoji: "🍞", kcal: 80, p: 3.5, k: 14, f: 1, per: 35, tags: ["complex koolh.","vezel"] },
+  { name: "Wit brood (1 snee)", emoji: "🍞", kcal: 75, p: 2.5, k: 14.5, f: 0.9, per: 30, tags: ["snelle koolh."] },
+  { name: "Banaan", emoji: "🍌", kcal: 89, p: 1.1, k: 23, f: 0.3, per: 100, tags: ["vrucht","energie"] },
+  { name: "Appel", emoji: "🍎", kcal: 52, p: 0.3, k: 14, f: 0.2, per: 100, tags: ["vrucht","vezel"] },
+  { name: "Blauwe bessen", emoji: "🫐", kcal: 57, p: 0.7, k: 14, f: 0.3, per: 100, tags: ["vrucht","antioxidanten"] },
+  { name: "Aardbei", emoji: "🍓", kcal: 32, p: 0.7, k: 8, f: 0.3, per: 100, tags: ["vrucht","laag koolh."] },
+  { name: "Pindakaas", emoji: "🥜", kcal: 588, p: 25, k: 20, f: 50, per: 100, tags: ["eiwitrijk","hoog vet"] },
+  { name: "Amandelen", emoji: "🌰", kcal: 579, p: 21, k: 22, f: 50, per: 100, tags: ["gezond vet","eiwitrijk"] },
+  // LUNCH & DINER
+  { name: "Kipfilet (bereid)", emoji: "🍗", kcal: 165, p: 31, k: 0, f: 3.6, per: 100, tags: ["eiwitrijk","laag vet","lean"] },
+  { name: "Zalm (bereid)", emoji: "🐟", kcal: 208, p: 20, k: 0, f: 13, per: 100, tags: ["eiwitrijk","omega-3","gezond vet"] },
+  { name: "Tonijn (blik, in water)", emoji: "🐟", kcal: 109, p: 24, k: 0, f: 1, per: 100, tags: ["eiwitrijk","laag vet"] },
+  { name: "Mager gehakt (kip)", emoji: "🥩", kcal: 170, p: 20, k: 0, f: 10, per: 100, tags: ["eiwitrijk"] },
+  { name: "Rundergehakt (5% vet)", emoji: "🥩", kcal: 150, p: 22, k: 0, f: 7, per: 100, tags: ["eiwitrijk"] },
+  { name: "Tofu (firm)", emoji: "🟡", kcal: 144, p: 17, k: 3, f: 8, per: 100, tags: ["plantaardig eiwit"] },
+  { name: "Tempeh", emoji: "🟤", kcal: 193, p: 19, k: 8, f: 11, per: 100, tags: ["plantaardig eiwit","vezel"] },
+  { name: "Cottage cheese", emoji: "🧀", kcal: 98, p: 11, k: 3.4, f: 4.3, per: 100, tags: ["eiwitrijk"] },
+  { name: "Volkoren pasta (bereid)", emoji: "🍝", kcal: 157, p: 6, k: 31, f: 1.2, per: 100, tags: ["complex koolh.","vezel"] },
+  { name: "Witte pasta (bereid)", emoji: "🍝", kcal: 158, p: 5.5, k: 31, f: 0.9, per: 100, tags: ["snelle koolh."] },
+  { name: "Zilvervliesrijst (bereid)", emoji: "🍚", kcal: 123, p: 2.7, k: 26, f: 1, per: 100, tags: ["complex koolh.","vezel"] },
+  { name: "Witte rijst (bereid)", emoji: "🍚", kcal: 130, p: 2.7, k: 28, f: 0.3, per: 100, tags: ["snelle koolh."] },
+  { name: "Aardappel (gekookt)", emoji: "🥔", kcal: 86, p: 1.9, k: 19, f: 0.1, per: 100, tags: ["complex koolh.","vezel"] },
+  { name: "Zoete aardappel (bereid)", emoji: "🍠", kcal: 86, p: 1.6, k: 20, f: 0.1, per: 100, tags: ["complex koolh.","vitamine A"] },
+  { name: "Broccoli", emoji: "🥦", kcal: 34, p: 2.8, k: 7, f: 0.4, per: 100, tags: ["groente","vezel","vitamine C"] },
+  { name: "Spinazie", emoji: "🥬", kcal: 23, p: 2.9, k: 3.6, f: 0.4, per: 100, tags: ["groente","ijzer"] },
+  { name: "Komkommer", emoji: "🥒", kcal: 16, p: 0.7, k: 3.6, f: 0.1, per: 100, tags: ["groente","laag kcal"] },
+  { name: "Tomaat", emoji: "🍅", kcal: 18, p: 0.9, k: 3.9, f: 0.2, per: 100, tags: ["groente","lycopeen"] },
+  { name: "Paprika", emoji: "🫑", kcal: 31, p: 1, k: 6, f: 0.3, per: 100, tags: ["groente","vitamine C"] },
+  { name: "Avocado", emoji: "🥑", kcal: 160, p: 2, k: 9, f: 15, per: 100, tags: ["gezond vet","vezel"] },
+  { name: "Linzen (bereid)", emoji: "🫘", kcal: 116, p: 9, k: 20, f: 0.4, per: 100, tags: ["plantaardig eiwit","vezel"] },
+  { name: "Kikkererwten (blik)", emoji: "🫘", kcal: 139, p: 7.3, k: 23, f: 2.5, per: 100, tags: ["plantaardig eiwit","vezel"] },
+  // SNACKS & MINDER GEZOND
+  { name: "Proteïne shake (whey)", emoji: "💪", kcal: 120, p: 25, k: 4, f: 2, per: 30, tags: ["eiwitrijk","supplement"] },
+  { name: "Proteïne reep", emoji: "🍫", kcal: 200, p: 20, k: 20, f: 7, per: 60, tags: ["eiwitrijk"] },
+  { name: "Rijstwafels", emoji: "⬜", kcal: 379, p: 7, k: 85, f: 1, per: 100, tags: ["snelle koolh."] },
+  { name: "Chips (zakje 40g)", emoji: "🥔", kcal: 212, p: 2.4, k: 22, f: 13, per: 40, tags: ["ongezond","hoog vet","bewerkt"] },
+  { name: "Chocolade (melk, 40g)", emoji: "🍫", kcal: 212, p: 3, k: 27, f: 12, per: 40, tags: ["suikerrijk","ongezond"] },
+  { name: "Friet (medium)", emoji: "🍟", kcal: 365, p: 4, k: 48, f: 17, per: 130, tags: ["ongezond","hoog vet","bewerkt"] },
+  { name: "Pizza (2 punten)", emoji: "🍕", kcal: 520, p: 21, k: 64, f: 20, per: 200, tags: ["bewerkt","caloriebomd"] },
+  { name: "Hamburger (fastfood)", emoji: "🍔", kcal: 490, p: 24, k: 42, f: 24, per: 200, tags: ["bewerkt","ongezond"] },
+  { name: "Frisdrank (blik 330ml)", emoji: "🥤", kcal: 139, p: 0, k: 35, f: 0, per: 330, tags: ["suikerrijk","leeg koolh."] },
+  { name: "Bier (glas 250ml)", emoji: "🍺", kcal: 110, p: 0.9, k: 8, f: 0, per: 250, tags: ["alcohol"] },
+  { name: "Wijn (glas 150ml)", emoji: "🍷", kcal: 125, p: 0.1, k: 4, f: 0, per: 150, tags: ["alcohol"] },
+  // DRANKEN
+  { name: "Koffie (zwart)", emoji: "☕", kcal: 2, p: 0.3, k: 0, f: 0, per: 200, tags: ["drank"] },
+  { name: "Melk (halfvol, 200ml)", emoji: "🥛", kcal: 100, p: 6.8, k: 9.4, f: 3.6, per: 200, tags: ["eiwitrijk"] },
+  { name: "Sinaasappelsap (200ml)", emoji: "🍊", kcal: 88, p: 1.3, k: 21, f: 0.3, per: 200, tags: ["suikerrijk","vrucht"] },
+  { name: "Water", emoji: "💧", kcal: 0, p: 0, k: 0, f: 0, per: 250, tags: ["drank","gezond"] },
+];
+
+const ACTIVITY_DB = [
+  { name: "Hardlopen", emoji: "🏃", met: 9.8, tags: ["cardio","buikvet"] },
+  { name: "Fietsen", emoji: "🚴", met: 7.5, tags: ["cardio"] },
+  { name: "Krachttraining", emoji: "🏋️", met: 5.0, tags: ["kracht","spieren"] },
+  { name: "Zwemmen", emoji: "🏊", met: 8.0, tags: ["cardio","full body"] },
+  { name: "Wandelen", emoji: "🚶", met: 3.5, tags: ["cardio","licht"] },
+  { name: "Yoga", emoji: "🧘", met: 3.0, tags: ["flexibiliteit","herstel"] },
+  { name: "HIIT", emoji: "⚡", met: 12.0, tags: ["cardio","buikvet","intensief"] },
+  { name: "Voetbal", emoji: "⚽", met: 8.0, tags: ["sport","cardio"] },
+  { name: "Tennis", emoji: "🎾", met: 7.3, tags: ["sport","cardio"] },
+  { name: "Roeien (machine)", emoji: "🚣", met: 9.0, tags: ["cardio","full body"] },
+  { name: "Touwtjespringen", emoji: "🪢", met: 11.0, tags: ["cardio","intensief"] },
+  { name: "Dans", emoji: "💃", met: 5.5, tags: ["cardio","fun"] },
+];
+
+let selectedActivity = null;
+let selectedFoodItem = null;
+
+// ============================================================
+// INIT
+// ============================================================
+window.onload = () => {
+  loadData();
+  if (profile.name) {
+    startApp();
+  } else {
+    document.getElementById('onboarding').style.display = 'flex';
+  }
+  setInterval(updateGreeting, 60000);
+};
+
+function loadData() {
+  try {
+    profile = JSON.parse(localStorage.getItem('ft_profile') || '{}');
+    weightLog = JSON.parse(localStorage.getItem('ft_weights') || '[]');
+    dailyKcalLog = JSON.parse(localStorage.getItem('ft_kcal_log') || '{}');
+    const today = getToday();
+    const stored = JSON.parse(localStorage.getItem('ft_today_' + today) || '{"food":[],"activities":[]}');
+    todayLog = stored;
+  } catch(e) {
+    console.warn('Load error', e);
+  }
+}
+
+function saveData() {
+  localStorage.setItem('ft_profile', JSON.stringify(profile));
+  localStorage.setItem('ft_weights', JSON.stringify(weightLog));
+  localStorage.setItem('ft_kcal_log', JSON.stringify(dailyKcalLog));
+  const today = getToday();
+  localStorage.setItem('ft_today_' + today, JSON.stringify(todayLog));
+  dailyKcalLog[today] = getTotalKcal();
+  localStorage.setItem('ft_kcal_log', JSON.stringify(dailyKcalLog));
+}
+
+function startApp() {
+  document.getElementById('onboarding').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('tab-bar').style.display = 'flex';
+  updateGreeting();
+  renderTodayDate();
+  renderTodayLog();
+  renderWeightCard();
+  populateSettings();
+  calculateGoals();
+  renderActivityGrid();
+}
+
+function completeOnboarding() {
+  const name = document.getElementById('ob-name').value.trim();
+  const age = parseInt(document.getElementById('ob-age').value);
+  const gender = document.getElementById('ob-gender').value;
+  const height = parseFloat(document.getElementById('ob-height').value);
+  const weight = parseFloat(document.getElementById('ob-weight').value);
+  const target = parseFloat(document.getElementById('ob-target').value);
+
+  if (!name || !age || !height || !weight || !target) {
+    alert('Vul alle velden in om door te gaan.');
+    return;
+  }
+
+  profile = { name, age, gender, height, weight, target, startWeight: weight, activityFactor: 1.55 };
+  weightLog = [{ date: getToday(), weight }];
+  saveData();
+  startApp();
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function getToday() {
+  return new Date().toISOString().split('T')[0];
+}
+
+function formatDate(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  return d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
+}
+
+function updateGreeting() {
+  const h = new Date().getHours();
+  let g = h < 12 ? 'Goedemorgen' : h < 18 ? 'Goedemiddag' : 'Goedenavond';
+  document.getElementById('greeting').textContent = g + (profile.name ? ', ' + profile.name.split(' ')[0] : '');
+}
+
+function renderTodayDate() {
+  const d = new Date();
+  document.getElementById('today-date').textContent = d.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' });
+  const today = getToday();
+  if (document.getElementById('weight-date-input')) {
+    document.getElementById('weight-date-input').value = today;
+  }
+}
+
+function getTotalKcal() {
+  return todayLog.food.reduce((s, f) => s + (f.kcal || 0), 0);
+}
+
+function getTotalMacro(macro) {
+  return todayLog.food.reduce((s, f) => s + (f[macro] || 0), 0);
+}
+
+function getActivityKcalBurned() {
+  return todayLog.activities.reduce((s, a) => s + (a.kcal || 0), 0);
+}
+
+// ============================================================
+// GOALS (Body Recomp)
+// ============================================================
+function calculateGoals() {
+  if (!profile.weight || !profile.height || !profile.age) return {};
+
+  // Mifflin-St Jeor BMR
+  let bmr;
+  if (profile.gender === 'm') {
+    bmr = 10 * profile.weight + 6.25 * profile.height - 5 * profile.age + 5;
+  } else {
+    bmr = 10 * profile.weight + 6.25 * profile.height - 5 * profile.age - 161;
+  }
+
+  const tdee = bmr * (profile.activityFactor || 1.55);
+
+  // Body recomp: slight deficit (~-200 kcal) but high protein
+  const kcalGoal = Math.round(tdee - 200);
+  const proteinGoal = Math.round(profile.weight * 2.2); // 2.2g/kg - hoog voor spieropbouw
+  const fatGoal = Math.round(profile.weight * 1.0); // ~1g/kg minimaal
+  const proteinKcal = proteinGoal * 4;
+  const fatKcal = fatGoal * 9;
+  const carbsKcal = kcalGoal - proteinKcal - fatKcal;
+  const carbsGoal = Math.max(80, Math.round(carbsKcal / 4));
+
+  const goals = { kcal: kcalGoal, protein: proteinGoal, carbs: carbsGoal, fat: fatGoal };
+  profile.goals = goals;
+
+  if (document.getElementById('goal-kcal')) {
+    document.getElementById('goal-kcal').textContent = kcalGoal + ' kcal';
+    document.getElementById('goal-protein').textContent = proteinGoal + 'g';
+    document.getElementById('goal-carbs').textContent = carbsGoal + 'g';
+    document.getElementById('goal-fat').textContent = fatGoal + 'g';
+  }
+
+  return goals;
+}
+
+function getGoals() {
+  return profile.goals || calculateGoals();
+}
+
+// ============================================================
+// RENDER TODAY
+// ============================================================
+function renderTodayLog() {
+  const goals = getGoals();
+  const eatenKcal = getTotalKcal();
+  const burnedKcal = getActivityKcalBurned();
+  const netKcal = eatenKcal - burnedKcal;
+  const goalKcal = goals.kcal || 2000;
+  const remaining = goalKcal - netKcal;
+
+  // Ring
+  const pct = Math.min(netKcal / goalKcal, 1);
+  const circumference = 327;
+  const offset = circumference - pct * circumference;
+  document.getElementById('ring-progress').style.strokeDashoffset = offset;
+  document.getElementById('ring-kcal-eaten').textContent = netKcal;
+  document.getElementById('ring-kcal-goal').textContent = goalKcal;
+  document.getElementById('remaining-kcal-label').textContent = remaining > 0 ? remaining + ' kcal over' : Math.abs(remaining) + ' kcal te veel';
+
+  // Macro bars
+  const p = getTotalMacro('p');
+  const k = getTotalMacro('k');
+  const f = getTotalMacro('f');
+  document.getElementById('bar-p-val').textContent = Math.round(p) + 'g';
+  document.getElementById('bar-k-val').textContent = Math.round(k) + 'g';
+  document.getElementById('bar-v-val').textContent = Math.round(f) + 'g';
+  document.getElementById('bar-p').style.width = Math.min(100, p / goals.protein * 100) + '%';
+  document.getElementById('bar-k').style.width = Math.min(100, k / goals.carbs * 100) + '%';
+  document.getElementById('bar-v').style.width = Math.min(100, f / goals.fat * 100) + '%';
+
+  // Food log
+  const foodEl = document.getElementById('today-food-log');
+  if (todayLog.food.length === 0) {
+    foodEl.innerHTML = '<div class="empty-state"><span class="emoji">🥗</span><p>Voeg je eerste maaltijd toe</p></div>';
+  } else {
+    // Group by meal
+    const meals = {};
+    todayLog.food.forEach(f => {
+      if (!meals[f.meal]) meals[f.meal] = [];
+      meals[f.meal].push(f);
+    });
+    const mealOrder = ['Ontbijt', 'Lunch', 'Avondeten', 'Snack'];
+    let html = '';
+    mealOrder.forEach(meal => {
+      if (!meals[meal]) return;
+      html += `<div class="meal-label">${meal}</div>`;
+      meals[meal].forEach(item => {
+        html += `
+          <div class="log-item">
+            <div class="log-icon log-icon-food">${item.emoji || '🍽️'}</div>
+            <div class="log-info">
+              <div class="log-name">${item.name}</div>
+              <div class="log-meta">${item.amount}g · P:${Math.round(item.p)}g K:${Math.round(item.k)}g V:${Math.round(item.f)}g</div>
+            </div>
+            <div class="log-kcal positive">${Math.round(item.kcal)} kcal</div>
+            <button class="log-delete" onclick="removeFood('${item.id}')">×</button>
+          </div>
+        `;
+      });
+    });
+    foodEl.innerHTML = html;
+  }
+
+  // Activity log
+  const actEl = document.getElementById('today-activity-log');
+  if (todayLog.activities.length === 0) {
+    actEl.innerHTML = '<div class="empty-state"><span class="emoji">🏃</span><p>Voeg een activiteit toe</p></div>';
+  } else {
+    let html = '';
+    todayLog.activities.forEach(a => {
+      html += `
+        <div class="log-item">
+          <div class="log-icon log-icon-activity">${a.emoji || '🏃'}</div>
+          <div class="log-info">
+            <div class="log-name">${a.name}</div>
+            <div class="log-meta">${a.duration} minuten verbrand</div>
+          </div>
+          <div class="log-kcal negative">-${Math.round(a.kcal)} kcal</div>
+          <button class="log-delete" onclick="removeActivity('${a.id}')">×</button>
+        </div>
+      `;
+    });
+    actEl.innerHTML = html;
+  }
+
+  saveData();
+}
+
+function renderWeightCard() {
+  const latest = weightLog.length > 0 ? weightLog[weightLog.length - 1].weight : profile.weight;
+  const start = profile.startWeight || profile.weight;
+  const target = profile.target;
+
+  document.getElementById('current-weight-display').textContent = latest || '—';
+
+  if (latest && target) {
+    const diff = (latest - target).toFixed(1);
+    document.getElementById('weight-goal-display').textContent = diff > 0 ? `Nog ${diff} kg naar doel` : `Doel bereikt! 🎉`;
+
+    // Progress bar (how far from start to goal)
+    if (start && start !== target) {
+      const total = Math.abs(start - target);
+      const done = Math.abs(start - latest);
+      const pct = Math.min(100, (done / total) * 100);
+      document.getElementById('weight-progress-fill').style.width = pct + '%';
+      document.getElementById('weight-progress-pct').textContent = Math.round(pct) + '%';
+      document.getElementById('weight-start-label').textContent = start + ' kg';
+      document.getElementById('weight-end-label').textContent = target + ' kg';
+    }
+  }
+}
+
+// ============================================================
+// FOOD MODAL
+// ============================================================
+function openFoodModal() {
+  document.getElementById('food-search').value = '';
+  document.getElementById('food-search-results').style.display = 'none';
+  document.getElementById('food-form').style.display = 'none';
+  document.getElementById('food-manual-btn-wrap').style.display = 'block';
+  document.getElementById('food-feedback').style.display = 'none';
+  clearFoodForm();
+  openModal('food-modal');
+}
+
+function searchFood(query) {
+  const resultsEl = document.getElementById('food-search-results');
+  if (query.length < 2) { resultsEl.style.display = 'none'; return; }
+
+  const q = query.toLowerCase();
+  const matches = FOOD_DB.filter(f =>
+    f.name.toLowerCase().includes(q) ||
+    (f.tags && f.tags.some(t => t.toLowerCase().includes(q)))
+  ).slice(0, 8);
+
+  if (matches.length === 0) { resultsEl.style.display = 'none'; return; }
+
+  resultsEl.style.display = 'block';
+  resultsEl.innerHTML = matches.map(f => `
+    <div class="search-item" onclick="selectFoodItem(${FOOD_DB.indexOf(f)})">
+      <div>
+        <div class="search-item-name">${f.emoji} ${f.name}</div>
+        <div class="search-item-macro">per ${f.per}g · E:${f.p}g K:${f.k}g V:${f.f}g</div>
+      </div>
+      <div class="search-item-kcal">${f.kcal} kcal</div>
+    </div>
+  `).join('');
+}
+
+function selectFoodItem(idx) {
+  const item = FOOD_DB[idx];
+  selectedFoodItem = item;
+
+  document.getElementById('food-search-results').style.display = 'none';
+  document.getElementById('food-search').value = item.name;
+  document.getElementById('food-form').style.display = 'block';
+  document.getElementById('food-manual-btn-wrap').style.display = 'none';
+
+  document.getElementById('food-name').value = item.name;
+  document.getElementById('food-amount').value = item.per;
+  document.getElementById('food-kcal').value = item.kcal;
+  document.getElementById('food-protein').value = item.p;
+  document.getElementById('food-carbs').value = item.k;
+  document.getElementById('food-fat').value = item.f;
+
+  // Auto-select meal based on time
+  const h = new Date().getHours();
+  const meal = h < 10 ? 'Ontbijt' : h < 14 ? 'Lunch' : h < 18 ? 'Snack' : 'Avondeten';
+  document.getElementById('food-meal').value = meal;
+}
+
+function showManualFoodForm() {
+  selectedFoodItem = null;
+  document.getElementById('food-form').style.display = 'block';
+  document.getElementById('food-manual-btn-wrap').style.display = 'none';
+  clearFoodForm();
+}
+
+function clearFoodForm() {
+  ['food-name','food-amount','food-kcal','food-protein','food-carbs','food-fat'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+}
+
+function updateFoodCalc() {
+  if (!selectedFoodItem) return;
+  const amount = parseFloat(document.getElementById('food-amount').value) || 0;
+  const factor = amount / selectedFoodItem.per;
+  document.getElementById('food-kcal').value = Math.round(selectedFoodItem.kcal * factor);
+  document.getElementById('food-protein').value = Math.round(selectedFoodItem.p * factor * 10) / 10;
+  document.getElementById('food-carbs').value = Math.round(selectedFoodItem.k * factor * 10) / 10;
+  document.getElementById('food-fat').value = Math.round(selectedFoodItem.f * factor * 10) / 10;
+}
+
+function clearFoodFeedback() {
+  document.getElementById('food-feedback').style.display = 'none';
+}
+
+function analyzeFoodFirst() {
+  const name = document.getElementById('food-name').value.trim();
+  const kcal = parseFloat(document.getElementById('food-kcal').value);
+  const protein = parseFloat(document.getElementById('food-protein').value) || 0;
+  const carbs = parseFloat(document.getElementById('food-carbs').value) || 0;
+  const fat = parseFloat(document.getElementById('food-fat').value) || 0;
+  const meal = document.getElementById('food-meal').value;
+  const amount = parseFloat(document.getElementById('food-amount').value) || 100;
+
+  if (!name || !kcal) { alert('Vul minimaal naam en calorieën in.'); return; }
+
+  // Analyse & feedback
+  const feedback = analyzeFoodChoice(name, kcal, protein, carbs, fat, meal, amount);
+  const fbEl = document.getElementById('food-feedback');
+
+  fbEl.className = 'feedback-box ' + feedback.type;
+  fbEl.style.display = 'block';
+  fbEl.innerHTML = `<div class="feedback-title"><span class="feedback-icon">${feedback.icon}</span>${feedback.title}</div>${feedback.body}`;
+
+  // Change button to just add
+  document.getElementById('analyze-btn').textContent = '+ Toevoegen';
+  document.getElementById('analyze-btn').onclick = addFood;
+}
+
+function analyzeFoodChoice(name, kcal, protein, carbs, fat, meal, amount) {
+  const goals = getGoals();
+  const currentProtein = getTotalMacro('p');
+  const currentKcal = getTotalKcal();
+  const tags = selectedFoodItem ? selectedFoodItem.tags : [];
+
+  const isProcessed = tags.includes('bewerkt') || tags.includes('ongezond');
+  const isHighSugar = tags.includes('suikerrijk');
+  const isHighFat = tags.includes('hoog vet') && !tags.includes('gezond vet');
+  const isProteinRich = protein >= 15 || tags.includes('eiwitrijk');
+  const isVeggie = tags.includes('groente') || tags.includes('vrucht');
+  const isAlcohol = tags.includes('alcohol');
+
+  // Checkt of dit te veel over de dagdoelen brengt
+  const newTotal = currentKcal + kcal;
+  const overGoal = newTotal > goals.kcal * 1.15;
+  const proteinNeeded = goals.protein - currentProtein;
+
+  if (isAlcohol) {
+    return {
+      type: 'warn', icon: '🍺',
+      title: 'Let op: alcohol',
+      body: `Alcohol levert lege calorieën en remt vetverbranding. Voor jouw body recomp doel kun je dit beter beperken. ${kcal} kcal met nauwelijks voedingswaarde.`
+    };
+  }
+
+  if (isProcessed && kcal > 300) {
+    const alt = protein < 15 ? 'Kies liever voor kipfilet, tonijn of kwark als maaltijd.' : '';
+    return {
+      type: 'bad', icon: '⚠️',
+      title: 'Niet ideaal voor jouw doel',
+      body: `Dit product is bewerkt en caloriëndicht (${kcal} kcal). Het bevat weinig voedingsstoffen die je helpen met spierbehoud of vetverbranding. ${alt}`
+    };
+  }
+
+  if (isHighSugar && !isVeggie) {
+    return {
+      type: 'warn', icon: '🍬',
+      title: 'Suikerrijk product',
+      body: `Dit bevat veel snelle suikers die je bloedsuiker laten pieken. Voor buikvetreductie kun je dit beter beperken. Een betere snack: Griekse yoghurt of een handvol noten.`
+    };
+  }
+
+  if (overGoal) {
+    return {
+      type: 'warn', icon: '📊',
+      title: 'Je dagdoel bijna overschreden',
+      body: `Na dit voedsel zit je op ~${newTotal} kcal, terwijl jouw doel ${goals.kcal} kcal is. Pas op met snacken de rest van de dag!`
+    };
+  }
+
+  if (isProteinRich) {
+    const proteinMsg = protein >= 20
+      ? `Uitstekend! Dit levert ${Math.round(protein)}g eiwit — perfect voor spierbehoud en -opbouw.`
+      : `Goed voor jouw eiwitinname. Je hebt nog ${Math.max(0,Math.round(proteinNeeded))}g eiwit nodig vandaag.`;
+    return {
+      type: 'good', icon: '💪',
+      title: 'Goede keuze!',
+      body: proteinMsg + (isVeggie ? ' Extra bonus: ook vezels en micronutriënten.' : '')
+    };
+  }
+
+  if (isVeggie) {
+    return {
+      type: 'good', icon: '🥗',
+      title: 'Prima keuze',
+      body: `Groenten en fruit zijn ideaal: veel voedingsstoffen, weinig calorieën. Voeg er wel een eiwitbron bij als dit de maaltijd is (bijv. kip, vis of eieren).`
+    };
+  }
+
+  if (proteinNeeded > 40 && protein < 10 && meal !== 'Snack') {
+    return {
+      type: 'warn', icon: '🔔',
+      title: 'Weinig eiwit in deze maaltijd',
+      body: `Je hebt vandaag nog ${Math.round(proteinNeeded)}g eiwit nodig. Overweeg om er een eiwitbron aan toe te voegen: kipfilet, eieren, tonijn of kwark.`
+    };
+  }
+
+  return {
+    type: 'good', icon: '✅',
+    title: 'Keuze toegevoegd',
+    body: `${name} past in jouw dagplan. Eiwit: ${Math.round(protein)}g · Koolh: ${Math.round(carbs)}g · Vet: ${Math.round(fat)}g`
+  };
+}
+
+function addFood() {
+  const name = document.getElementById('food-name').value.trim();
+  const kcal = parseFloat(document.getElementById('food-kcal').value);
+  const protein = parseFloat(document.getElementById('food-protein').value) || 0;
+  const carbs = parseFloat(document.getElementById('food-carbs').value) || 0;
+  const fat = parseFloat(document.getElementById('food-fat').value) || 0;
+  const meal = document.getElementById('food-meal').value;
+  const amount = parseFloat(document.getElementById('food-amount').value) || 100;
+  const emoji = selectedFoodItem ? selectedFoodItem.emoji : '🍽️';
+
+  if (!name || !kcal) { alert('Vul minimaal naam en calorieën in.'); return; }
+
+  todayLog.food.push({
+    id: Date.now().toString(),
+    name, kcal, p: protein, k: carbs, f: fat, meal, amount, emoji
+  });
+
+  closeModal('food-modal');
+  renderTodayLog();
+}
+
+function removeFood(id) {
+  todayLog.food = todayLog.food.filter(f => f.id !== id);
+  renderTodayLog();
+}
+
+// ============================================================
+// ACTIVITY MODAL
+// ============================================================
+function renderActivityGrid() {
+  const grid = document.getElementById('activity-grid');
+  if (!grid) return;
+  grid.innerHTML = ACTIVITY_DB.map((a, i) => `
+    <button class="activity-type-btn" onclick="selectActivityType(${i})" id="act-btn-${i}">
+      <span class="emoji">${a.emoji}</span>${a.name}
+    </button>
+  `).join('');
+}
+
+function openActivityModal() {
+  selectedActivity = null;
+  document.getElementById('act-custom-name').value = '';
+  document.getElementById('act-duration').value = '';
+  document.getElementById('act-kcal').value = '';
+  document.getElementById('act-feedback').style.display = 'none';
+  document.querySelectorAll('.activity-type-btn').forEach(b => b.classList.remove('selected'));
+  openModal('activity-modal');
+}
+
+function selectActivityType(idx) {
+  selectedActivity = ACTIVITY_DB[idx];
+  document.querySelectorAll('.activity-type-btn').forEach((b, i) => {
+    b.classList.toggle('selected', i === idx);
+  });
+  document.getElementById('act-custom-name').value = '';
+  calcActivityKcal();
+}
+
+function customActivityInput(val) {
+  if (val) {
+    selectedActivity = { name: val, emoji: '🏃', met: 5.0 };
+    document.querySelectorAll('.activity-type-btn').forEach(b => b.classList.remove('selected'));
+    calcActivityKcal();
+  }
+}
+
+function calcActivityKcal() {
+  if (!selectedActivity) return;
+  const duration = parseFloat(document.getElementById('act-duration').value);
+  if (!duration) return;
+
+  const weight = profile.weight || 80;
+  const kcal = Math.round(selectedActivity.met * weight * duration / 60);
+  document.getElementById('act-kcal').value = kcal;
+
+  // Feedback
+  const fbEl = document.getElementById('act-feedback');
+  const tags = selectedActivity.tags || [];
+  let msg = '';
+  if (tags.includes('buikvet') || tags.includes('cardio')) {
+    msg = `💪 Goed bezig! ${selectedActivity.name} is effectief voor vetverbranding. Je verbrandt ca. ${kcal} kcal in ${duration} min.`;
+    if (tags.includes('intensief')) msg += ' HIIT en hardlopen zijn extra effectief voor buikvetreductie.';
+  } else if (tags.includes('kracht') || tags.includes('spieren')) {
+    msg = `🏋️ Krachtraining bouwt spiermassa op, wat je stofwisseling verhoogt. Goed voor body recomp! ~${kcal} kcal verbrand.`;
+  } else {
+    msg = `✅ ${duration} minuten ${selectedActivity.name} = ~${kcal} kcal verbrand.`;
+  }
+
+  fbEl.innerHTML = msg;
+  fbEl.style.display = 'block';
+}
+
+function addActivity() {
+  const name = selectedActivity ? selectedActivity.name : document.getElementById('act-custom-name').value.trim();
+  const duration = parseFloat(document.getElementById('act-duration').value);
+  const kcal = parseFloat(document.getElementById('act-kcal').value);
+  const emoji = selectedActivity ? selectedActivity.emoji : '🏃';
+
+  if (!name || !duration) { alert('Selecteer een activiteit en vul de duur in.'); return; }
+
+  todayLog.activities.push({
+    id: Date.now().toString(),
+    name, duration, kcal: kcal || 0, emoji
+  });
+
+  closeModal('activity-modal');
+  renderTodayLog();
+}
+
+function removeActivity(id) {
+  todayLog.activities = todayLog.activities.filter(a => a.id !== id);
+  renderTodayLog();
+}
+
+// ============================================================
+// WEIGHT MODAL
+// ============================================================
+function openWeightModal() {
+  document.getElementById('weight-input').value = '';
+  document.getElementById('weight-date-input').value = getToday();
+  openModal('weight-modal');
+}
+
+function logWeight() {
+  const w = parseFloat(document.getElementById('weight-input').value);
+  const d = document.getElementById('weight-date-input').value;
+  if (!w || !d) { alert('Vul gewicht en datum in.'); return; }
+
+  // Update or add
+  const existing = weightLog.findIndex(e => e.date === d);
+  if (existing >= 0) {
+    weightLog[existing].weight = w;
+  } else {
+    weightLog.push({ date: d, weight: w });
+    weightLog.sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  // Update profile current weight if today
+  if (d === getToday()) {
+    profile.weight = w;
+    calculateGoals();
+  }
+
+  saveData();
+  closeModal('weight-modal');
+  renderWeightCard();
+  renderProgress();
+}
+
+// ============================================================
+// MODAL HELPERS
+// ============================================================
+function openModal(id) {
+  const el = document.getElementById(id);
+  el.classList.add('open');
+  el.addEventListener('click', (e) => { if (e.target === el) closeModal(id); }, { once: true });
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  selectedFoodItem = null;
+  selectedActivity = null;
+  // Reset analyze button
+  const analyzeBtn = document.getElementById('analyze-btn');
+  if (analyzeBtn) {
+    analyzeBtn.textContent = '🔍 Analyseer & voeg toe';
+    analyzeBtn.onclick = analyzeFoodFirst;
+  }
+}
+
+// ============================================================
+// SETTINGS
+// ============================================================
+function populateSettings() {
+  document.getElementById('s-name').value = profile.name || '';
+  document.getElementById('s-age').value = profile.age || '';
+  document.getElementById('s-gender').value = profile.gender || 'm';
+  document.getElementById('s-height').value = profile.height || '';
+  document.getElementById('s-weight').value = profile.weight || '';
+  document.getElementById('s-target').value = profile.target || '';
+  document.getElementById('s-activity-factor').value = profile.activityFactor || 1.55;
+}
+
+function saveSettings() {
+  profile.name = document.getElementById('s-name').value.trim();
+  profile.age = parseInt(document.getElementById('s-age').value);
+  profile.gender = document.getElementById('s-gender').value;
+  profile.height = parseFloat(document.getElementById('s-height').value);
+  profile.weight = parseFloat(document.getElementById('s-weight').value);
+  profile.target = parseFloat(document.getElementById('s-target').value);
+  profile.activityFactor = parseFloat(document.getElementById('s-activity-factor').value);
+
+  calculateGoals();
+  saveData();
+  renderWeightCard();
+  renderTodayLog();
+  updateGreeting();
+  alert('✅ Instellingen opgeslagen!');
+}
+
+function clearData() {
+  localStorage.clear();
+  location.reload();
+}
+
+// ============================================================
+// TAB SWITCHING
+// ============================================================
+function switchTab(tab) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + tab).classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+
+  if (tab === 'progress') renderProgress();
+  if (tab === 'settings') { populateSettings(); calculateGoals(); }
+}
+
+// ============================================================
+// PROGRESS
+// ============================================================
+function renderProgress() {
+  renderStatGrid();
+  renderWeightChart();
+  renderKcalChart();
+  renderWeightLogList();
+}
+
+function renderStatGrid() {
+  const goals = getGoals();
+  const eatenKcal = getTotalKcal();
+  const burned = getActivityKcalBurned();
+  const protein = getTotalMacro('p');
+  const latest = weightLog.length > 0 ? weightLog[weightLog.length - 1].weight : profile.weight;
+  const start = profile.startWeight || profile.weight;
+  const diff = latest && start ? (latest - start).toFixed(1) : 0;
+  const weekAvg = getWeekAvgKcal();
+
+  document.getElementById('stat-grid').innerHTML = `
+    <div class="stat-card">
+      <div class="label">Gewicht nu</div>
+      <div class="value">${latest || '—'}</div>
+      <div class="sub">kg · ${diff > 0 ? '+' : ''}${diff} since start</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Eiwit vandaag</div>
+      <div class="value" style="color:#5856D6">${Math.round(protein)}g</div>
+      <div class="sub">doel: ${goals.protein}g</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Kcal vandaag</div>
+      <div class="value" style="color:var(--accent)">${eatenKcal}</div>
+      <div class="sub">verbrand: ${burned} kcal</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Week gem. kcal</div>
+      <div class="value">${weekAvg}</div>
+      <div class="sub">doel: ${goals.kcal} kcal</div>
+    </div>
+  `;
+}
+
+function getWeekAvgKcal() {
+  const today = new Date();
+  let total = 0, count = 0;
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().split('T')[0];
+    if (dailyKcalLog[key]) { total += dailyKcalLog[key]; count++; }
+  }
+  return count > 0 ? Math.round(total / count) : 0;
+}
+
+function renderWeightChart() {
+  const canvas = document.getElementById('weight-chart');
+  const ctx = canvas.getContext('2d');
+  const data = weightLog.slice(-30);
+
+  if (data.length < 2) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#aeaeb2';
+    ctx.font = '14px -apple-system';
+    ctx.textAlign = 'center';
+    ctx.fillText('Log meer gewichtsmetingen voor grafiek', canvas.width/2, 75);
+    return;
+  }
+
+  drawLineChart(ctx, canvas,
+    data.map(d => formatDate(d.date)),
+    data.map(d => d.weight),
+    '#007AFF',
+    profile.target
+  );
+}
+
+function renderKcalChart() {
+  const canvas = document.getElementById('kcal-chart');
+  const ctx = canvas.getContext('2d');
+
+  const days = [];
+  const vals = [];
+  const today = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().split('T')[0];
+    days.push(d.toLocaleDateString('nl-NL', { weekday: 'short' }));
+    vals.push(dailyKcalLog[key] || 0);
+  }
+
+  drawBarChart(ctx, canvas, days, vals, '#34C759', getGoals().kcal);
+}
+
+function drawLineChart(ctx, canvas, labels, data, color, targetLine) {
+  const W = canvas.offsetWidth || 340;
+  const H = 150;
+  canvas.width = W * window.devicePixelRatio;
+  canvas.height = H * window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+  const pad = { l: 40, r: 16, t: 16, b: 30 };
+  const cw = W - pad.l - pad.r;
+  const ch = H - pad.t - pad.b;
+
+  const min = Math.min(...data) - 2;
+  const max = Math.max(...data) + 2;
+  const range = max - min || 1;
+
+  const xStep = cw / (data.length - 1);
+  const toY = v => pad.t + ch - (v - min) / range * ch;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Grid
+  ctx.strokeStyle = '#e5e5ea';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + ch * i / 4;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + cw, y); ctx.stroke();
+    const val = (max - (max - min) * i / 4).toFixed(1);
+    ctx.fillStyle = '#aeaeb2'; ctx.font = '10px -apple-system'; ctx.textAlign = 'right';
+    ctx.fillText(val, pad.l - 4, y + 4);
+  }
+
+  // Target line
+  if (targetLine) {
+    const ty = toY(targetLine);
+    ctx.strokeStyle = '#34C759';
+    ctx.setLineDash([4, 4]); ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(pad.l, ty); ctx.lineTo(pad.l + cw, ty); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#34C759'; ctx.font = '10px -apple-system'; ctx.textAlign = 'left';
+    ctx.fillText('doel', pad.l + 2, ty - 3);
+  }
+
+  // Line
+  ctx.strokeStyle = color; ctx.lineWidth = 2.5; ctx.setLineDash([]);
+  ctx.beginPath();
+  data.forEach((v, i) => {
+    const x = pad.l + i * xStep;
+    const y = toY(v);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  // Dots
+  data.forEach((v, i) => {
+    const x = pad.l + i * xStep;
+    const y = toY(v);
+    ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = color; ctx.fill();
+    ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.stroke();
+  });
+
+  // Labels (every nth)
+  const step = Math.ceil(labels.length / 5);
+  ctx.fillStyle = '#aeaeb2'; ctx.font = '10px -apple-system'; ctx.textAlign = 'center';
+  labels.forEach((l, i) => {
+    if (i % step === 0 || i === labels.length - 1) {
+      ctx.fillText(l, pad.l + i * xStep, H - 6);
+    }
+  });
+}
+
+function drawBarChart(ctx, canvas, labels, data, color, goalLine) {
+  const W = canvas.offsetWidth || 340;
+  const H = 120;
+  canvas.width = W * window.devicePixelRatio;
+  canvas.height = H * window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+  const pad = { l: 40, r: 16, t: 16, b: 24 };
+  const cw = W - pad.l - pad.r;
+  const ch = H - pad.t - pad.b;
+
+  const max = Math.max(...data, goalLine || 0) * 1.15 || 2500;
+  const barW = (cw / data.length) * 0.6;
+  const barGap = (cw / data.length) * 0.4 / 2;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Bars
+  data.forEach((v, i) => {
+    const x = pad.l + i * (cw / data.length) + barGap;
+    const barH = v / max * ch;
+    const y = pad.t + ch - barH;
+    ctx.fillStyle = v > 0 ? color : '#e5e5ea';
+    ctx.beginPath();
+    const r = 4;
+    ctx.moveTo(x + r, y); ctx.lineTo(x + barW - r, y);
+    ctx.arcTo(x + barW, y, x + barW, y + r, r);
+    ctx.lineTo(x + barW, y + barH); ctx.lineTo(x, y + barH);
+    ctx.lineTo(x, y + r); ctx.arcTo(x, y, x + r, y, r);
+    ctx.closePath(); ctx.fill();
+  });
+
+  // Goal line
+  if (goalLine) {
+    const gy = pad.t + ch - (goalLine / max * ch);
+    ctx.strokeStyle = '#FF9500'; ctx.setLineDash([4, 4]); ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(pad.l, gy); ctx.lineTo(pad.l + cw, gy); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Labels
+  ctx.fillStyle = '#aeaeb2'; ctx.font = '10px -apple-system'; ctx.textAlign = 'center';
+  labels.forEach((l, i) => {
+    ctx.fillText(l, pad.l + i * (cw / data.length) + (cw / data.length / 2), H - 4);
+  });
+
+  // Y labels
+  ctx.textAlign = 'right';
+  [0, Math.round(max / 2), Math.round(max)].forEach(v => {
+    const y = pad.t + ch - (v / max * ch);
+    ctx.fillText(v, pad.l - 4, y + 4);
+  });
+}
+
+function renderWeightLogList() {
+  const el = document.getElementById('weight-log-list');
+  if (weightLog.length === 0) {
+    el.innerHTML = '<div class="empty-state"><span class="emoji">⚖️</span><p>Nog geen gewichten gelogd</p></div>';
+    return;
+  }
+  el.innerHTML = [...weightLog].reverse().slice(0, 15).map(w => {
+    const isLatest = w === weightLog[weightLog.length - 1];
+    return `
+      <div class="weight-log-item">
+        <span style="color:var(--text2);font-size:14px">${formatDate(w.date)}</span>
+        <span style="font-size:18px;font-weight:700${isLatest ? ';color:var(--accent)' : ''}">${w.weight} kg</span>
+      </div>
+    `;
+  }).join('');
+}
+
+// ============================================================
+// INIT ACTIVITY MODAL TIME
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  renderActivityGrid();
+});
+</script>
+</body>
+</html>
